@@ -1,3 +1,4 @@
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Main {
@@ -6,7 +7,6 @@ public class Main {
         // Вывод приветствия и поля
         System.out.println("Игра: КреСТИкИ-НоЛИки");
         System.out.println();
-
 
         // Поле
         char[][] board = {
@@ -19,31 +19,20 @@ public class Main {
         var scanner = new Scanner(System.in); // System.in означает, что мы ожидаем ввод с клавиатуры. Также можно вместо этого вписать файл и читать его
 
         // Текущий ход. Начало с "х"
-        char turn = 'х';
+        char turn = 'x';
 
         // Счетчик ходов
         int moveCount = 0;
 
         while (true) {
 
-            // Вывод текущего поля
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    // Убрали лишние пробелы в конце + сделали расстояние между "."
-                    if (j != 2) {
-                        System.out.print(board[i][j] + "  ");
-                    }
-                    else {
-                        System.out.print(board[i][j]);
-                    }
-                }
-                System.out.println();
-            }
-
-            // Запрос у пользователя ячейки поля
+            System.out.println();
+            printBoard(board); // Вывод поля
+            System.out.println();
 
             System.out.println("Сейчас ходит: " + turn);
 
+            // Запрос у пользователя ячейки поля
             // Блок try/catch сохраняет переменные инициализированные внутри него оставляем внутри себя
             // Поэтому объявляем заранее
             int row = 0;
@@ -52,16 +41,23 @@ public class Main {
             try {
                 System.out.print("Введите номер строки(0-2): ");
                 row = scanner.nextInt(); // Здесь нельзя писать "var row", читаемость упадет. Всегда, где цифры лучше не исп. "var"
+                if (row < 0 || row > 2) {
+                    throw new IllegalArgumentException();
+                }
 
                 System.out.print("Введите номер столбца(0-2): ");
                 col = scanner.nextInt();
-
-                if (row < 0 || row > 2 || col < 0 || col > 2) {
-                    throw new Exception(); // Если индекса такой ячейки нет - специально вызываем ошибку и отправляем в блок catch
+                if (col < 0 || col > 2) {
+                    throw new IllegalArgumentException(); // Если индекса такой ячейки нет (выход за пределы массива) - вызываем ошибку
                 }
-            }
-            catch (Exception e) { // Exception e - мы обрабатываем все возможные ошибки и отправляем в начало цикла
-                System.out.println("Ошибка ввода!");
+
+            } catch (InputMismatchException |
+                     IllegalArgumentException e) { // InputMismatchException - ошибка, получил тип данных не который ожидал
+                // Т.к. ранее мы выбросили ошибку с аргументом, то мы должны ее ловить в catch, а также нужно поймать ошибку с типами данных
+                // Для этого исопользуется multi-catch - это |
+                // e - нужен, чтобы хранить внутри себя данные об ошибке, потом можно будет вывести ее и посмотреть + это обязательный синтаксис Java
+                // Важно! Из-за multi-catch 2 разные ошибки сохраняются в 1 e
+                System.out.println("Ошибка ввода! Введите число от 0 до 2 (включительно)");
                 // Важно! Если user введет например "Пока", а контейнер ожидает Int, он заберет "Пока" и сохранит его и когда после
                 // обработки ошибки он вернется к этому этапу он уже будет содержать "Пока" и опять будет ошибка. Поэтому Важно его очистить.
                 scanner.nextLine(); // Очистка контейнера
@@ -74,44 +70,84 @@ public class Main {
                 moveCount++; // Увеличиваем ход на 1
                 board[row][col] = turn; // Заполняем ячейку
 
-                // Проверка на победу
-                if (moveCount >= 5) { // Выиграть можно только, если >= 5 ходов, поэтому раньше не проверяем
-                    boolean hasWon = false; // Флажок на победу
-
-                    for (int i = 0; i < 3; i++) {
-                        // Проверка строк и столбцов
-                        if ((board[i][0] == turn && board[i][1] == turn && board[i][2] == turn)) hasWon = true;
-                        if ((board[0][i] == turn && board[1][i] == turn && board[2][i] == turn)) hasWon = true;
-                    }
-                    // Проверка главной и побочной диагонали
-                    if ((board[0][0] == turn && board[1][1] == turn && board[2][2] == turn)) hasWon = true;
-                    if ((board[0][2] == turn && board[1][1] == turn && board[2][0] == turn)) hasWon = true;
-
-                    if (hasWon) {
-                        System.out.println();
-                        System.out.println("Победил игрок: " + turn + ". Поздравляем!");
-                        break;
-                    }
+                if (isWin(turn, board)) {
+                    printBoard(board); // Печать поля для красоты
+                    System.out.println();
+                    System.out.println("Победил игрок: " + turn + ". Поздравляем!");
+                    break;
                 }
 
                 // Проверка на ничью
-                if (moveCount == 9) {
+                if (isDraw(moveCount)) {
+                    printBoard(board); // Печать поля для красоты
                     System.out.println();
                     System.out.println("Ничья!");
                     break;
                 }
 
                 // Смена хода
-                if (turn == 'х') {
-                    turn = 'о';
-                }
-                else {
-                    turn = 'х';
-                }
-            }
-            else {
+                turn = nextTurn(turn);
+
+            } else {
                 System.out.println("Ячейка уже занята, выберите другую");
             }
         }
+    }
+
+    private static void printBoard(char[][] board) {
+        // char[][] board внутри скобок, это тип данных и имя (может быть любое,
+        // необязательно такое же как в блоке ниже) которе будет использоваться
+        // Вывод текущего поля
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                // Убрали лишние пробелы в конце + сделали расстояние между "."
+                if (j != 2) {
+                    System.out.print(board[i][j] + "  ");
+                } else {
+                    System.out.print(board[i][j]);
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private static boolean isWin(char turn, char[][] board) { // Важно! ЛЮБОЙ путь выполнения должен вести к return
+
+        for (int i = 0; i < 3; i++) {
+            // Проверка строк и столбцов
+            // Если победа - возвращаем true (return true), до этого я хотел инициализировать переменную
+            // если она подходит - меняю на true и только в конце return. Мало того, что вызывало ошибки, код проходил лишние строки (мог завершмться раньше)
+            if ((board[i][0] == turn && board[i][1] == turn && board[i][2] == turn)) return true;
+            if ((board[0][i] == turn && board[1][i] == turn && board[2][i] == turn)) return true;
+        }
+        // Проверка главной и побочной диагонали
+        if ((board[0][0] == turn && board[1][1] == turn && board[2][2] == turn)) return true;
+        if ((board[0][2] == turn && board[1][1] == turn && board[2][0] == turn)) return true;
+
+        return false; // Код пройдет все проверки для победы, если ни 1 не будет пройдена - вернет false
+    }
+
+    private static boolean isDraw(int moveCount) {
+        /*
+        Было вот так (много и некрасиво):
+        if (moveCount == 9) {
+            return true;
+        }
+        else {
+            return false;
+        }
+         */
+        // Стало:
+        return moveCount == 9; // Это выражение уже вернет булевое значение
+    }
+
+    private static char nextTurn(char turn) {
+        // Еще можно заменить чуть старшим способом (через тернарный оператор(? and :)):
+        // return (turn == 'x' ? 'o' : 'x');
+        return switch (turn) {
+            case 'x' -> 'o';
+            case 'o' -> 'x';
+            default -> turn;
+        }; // Важно! В switch ; после }
     }
 }
