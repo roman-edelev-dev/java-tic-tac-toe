@@ -1,5 +1,6 @@
-import java.util.InputMismatchException;
-import java.util.Scanner;
+import java.util.InputMismatchException; // Для обработки ошибки с вводом
+import java.util.Scanner; // Для ввода с клавиатуры, но также можно для чтения файлов
+import java.util.Random; // Для бота
 
 public class Main {
     public static void main(String[] args) {
@@ -7,9 +8,10 @@ public class Main {
         System.out.println("Игра: КреСТИкИ-НоЛИки");
         System.out.println();
 
-        System.out.println("Играть с ботом или нет? (y/n)");
+        System.out.println("Играть с ботом? (y/n)");
 
         // Здесь мы видим "new Scanner.." -> ожидаем тип Scanner. Поэтому можем не писать "Scanner (имя)", а пишем "var (имя)", оно короче и понятней
+        var random = new Random(); // Для бота, вместо var можно Random
         var scanner = new Scanner(System.in); // System.in означает, что мы ожидаем ввод с клавиатуры. Также можно вместо этого вписать файл и читать его
         int xWins = 0;
         int oWins = 0;
@@ -29,7 +31,8 @@ public class Main {
             System.out.println();
 
             // Хочет ли пользователь продолжить? Если нет, то выходим из цикла
-            if (!askYesNo(scanner)) break; //askYesNo вернет false(пользователь хочет закончить), тогда '!' изменит его на true и сработает break
+            if (!askYesNo(scanner))
+                break; //askYesNo вернет false(пользователь хочет закончить), тогда '!' изменит его на true и сработает break
         }
     }
 
@@ -179,14 +182,48 @@ public class Main {
             // toLowerCase переводит в нижний регистр,
             // а charAt(0) берет первый символ(индекс который в скобках), пример: yes -> y
             switch (answer) {
-                case 'y' -> { return true; } //  Без {} выдает ошибку. Разрешены только выражения, блоки(фигурные скобки {}) и выброс ошибок (throw ...)
-                case 'n' -> { return false; } // Поэтому прячем return в фигурные скобки, который разрешен синтаксисом языка
-                default -> System.out.println("Неверный ввод. Введите y, чтобы продолжить или n, чтобы завершить"); // Вызов метода (выражение) - разрешен
+                case 'y' -> {
+                    return true;
+                } //  Без {} выдает ошибку. Разрешены только выражения, блоки(фигурные скобки {}) и выброс ошибок (throw ...)
+                case 'n' -> {
+                    return false;
+                } // Поэтому прячем return в фигурные скобки, который разрешен синтаксисом языка
+                default ->
+                        System.out.println("Неверный ввод. Введите y, чтобы продолжить или n, чтобы завершить"); // Вызов метода (выражение) - разрешен
             }
         }
     }
+
+    private static int ChoiceOR(Scanner scanner, Random random) {
+        while (true) {
+            System.out.println("Выберите: орел(0) или решка(1). Напишите, что вы выбрали: 0/1");
+            char answer = scanner.next().trim().toLowerCase().charAt(0); //trim убрать невидимые символы,
+            // toLowerCase переводит в нижний регистр,
+            // а charAt(0) берет первый символ(индекс который в скобках), пример: yes -> y
+
+            switch (answer) {
+                case '0' -> {
+                    int coinFlip = random.nextInt(2); // 2 в скобках означает что от 0 до 2(не включительно)
+                    return (coinFlip == 0) ? 0 : 1; // здесь интересный трюк описанный после метода будет
+                } //  Без {} выдает ошибку. Разрешены только выражения, блоки(фигурные скобки {}) и выброс ошибок (throw ...)
+                case '1' -> {
+                    int coinFlip = random.nextInt(2);
+                    return (coinFlip == 1) ? 2 : 3;
+                } // Поэтому прячем return в фигурные скобки, который разрешен синтаксисом языка
+                default ->
+                        System.out.println("Неверный ввод. Введите 0, если вы за 'орел' или 1, если вы за 'решка'"); // Вызов метода (выражение) - разрешен
+            }
+        }
+    }
+    // Почему возвращает числа 0-4, сделано, чтобы собрать всю инфу, возвращая так мы понимаем, что выбрал пользователь и выиграл он или нет
+    // Удобно, что если возвратное значение кратно 2, то выиграл user
+
     // Для игры с ботом
     private static char playOneGameWithBot(Scanner scanner) { // Извне берется только сканер
+        // Орел или решка
+        System.out.println("Кто ходит первым определяется жребием");
+        System.out.println("Выберите: орел(0) или решка(1). Напишите за кого вы: 0/1");
+        int choise = ChoiceOR();
         // Поле
         char[][] board = {
                 {'.', '.', '.'},
@@ -267,4 +304,5 @@ public class Main {
                 System.out.println("Поле уже занято, выберите другое");
             }
         }
+    }
 }
