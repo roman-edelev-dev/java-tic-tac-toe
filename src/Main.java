@@ -32,10 +32,8 @@ public class Main {
             }
 
             System.out.println();
-            System.out.println("-------------------------------------------");
-            System.out.println("Счет для одного -> " + GREEN + "x" + RESET + ": " + xWins + " | " + RED + "o" + RESET + ": " + oWins + " | ничья: " + draws);
-            System.out.println("Счет с ботом -> " + GREEN + "user" + RESET + ": " + uWins + " | " + RED + "bot" + RESET + ": " + bWins + " | ничья: " + draws);
-            System.out.println("-------------------------------------------");
+            System.out.println(GRAY + "Счет для одного -> x: " + xWins + " | o: " + oWins + " | ничья: " + draws + RESET);
+            System.out.println(GRAY + "Счет с ботом -> user: " + uWins + " | bot: " + bWins + " | ничья: " + draws + RESET);
             System.out.println();
 
             // Хочет ли пользователь продолжить? Если нет, то выходим из цикла
@@ -51,12 +49,14 @@ public class Main {
         // Вывод текущего поля
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                // Убрали лишние пробелы в конце + сделали расстояние между "."
-                if (j != 2) {
-                    System.out.print(board[i][j] + "  ");
-                } else {
-                    System.out.print(board[i][j]);
-                }
+
+                String cell; // В этом блоке меняем цвет "." на серую цифру, x на зеленый, o на красный
+                if (board[i][j] == '.')
+                    cell = GRAY + (i * 3 + j + 1) + RESET; // Так мы все "." меняем на цифру и красим в серый
+                else if (board[i][j] == 'x') cell = GREEN + "x" + RESET;
+                else cell = RED + "o" + RESET;
+
+                System.out.print(cell + (j != 2 ? " " : "")); // Сократили код в 1 строку из 5 с помощью тернарного оператора
             }
             System.out.println();
         }
@@ -141,7 +141,9 @@ public class Main {
                 if (isWin(turn, board)) {
                     printBoard(board); // Печать поля для красоты
                     System.out.println();
-                    System.out.println(GREEN + "Победил игрок: " + turn + ". Поздравляем!" + RESET);
+                    System.out.println("-------------------------------------------");
+                    System.out.println(GREEN + "        Победил " + turn + "! Поздравляем!" + RESET);
+                    System.out.println("-------------------------------------------");
                     return turn;
                 }
 
@@ -149,7 +151,9 @@ public class Main {
                 if (isDraw(moveCount)) {
                     printBoard(board); // Печать поля для красоты
                     System.out.println();
-                    System.out.println("Ничья!");
+                    System.out.println("-------------------------------------------");
+                    System.out.println("                  Ничья");
+                    System.out.println("-------------------------------------------");
                     return 'd';
                 }
 
@@ -231,10 +235,14 @@ public class Main {
                     System.out.println();
                     if (turn == humanSymbol) {
                         turn = 'u'; // Что выиграл user
-                        System.out.println(GREEN + "Вы выиграли! Поздравляем!" + RESET);
+                        System.out.println("-------------------------------------------");
+                        System.out.println(GREEN + "        Вы выиграли! Поздравляем!" + RESET);
+                        System.out.println("-------------------------------------------");
                     } else {
                         turn = 'b';
-                        System.out.println(RED + "Вы проиграли :(" + RESET);
+                        System.out.println("-------------------------------------------");
+                        System.out.println(RED + "             Вы проиграли :(" + RESET);
+                        System.out.println("-------------------------------------------");
                     }
                     return turn;
                 }
@@ -273,8 +281,9 @@ public class Main {
         while (true) {
             try {
                 System.out.print("Введите номер поля от 1 до 9: ");
-                System.out.println();
                 int n = scanner.nextInt();
+                System.out.println();
+
                 if (n < 1 || n > 9) throw new IllegalArgumentException();
                 int row = (n - 1) / 3;
                 int col = (n - 1) % 3;
