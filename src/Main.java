@@ -1,6 +1,8 @@
 import java.util.InputMismatchException; // Для обработки ошибки с вводом
 import java.util.Scanner; // Для ввода с клавиатуры, но также можно для чтения файлов
 import java.util.Random; // Для бота
+import java.util.List; // Для динамического списка(для переменной хранящей пустые поля)
+import java.util.ArrayList; // Аналогично выше
 
 public class Main {
     public static void main(String[] args) {
@@ -8,17 +10,17 @@ public class Main {
         System.out.println("Игра: КреСТИкИ-НоЛИки");
         System.out.println();
 
-        System.out.println("Играть с ботом? (y/n)");
-
         // Здесь мы видим "new Scanner.." -> ожидаем тип Scanner. Поэтому можем не писать "Scanner (имя)", а пишем "var (имя)", оно короче и понятней
-        var random = new Random(); // Для бота, вместо var можно Random
         var scanner = new Scanner(System.in); // System.in означает, что мы ожидаем ввод с клавиатуры. Также можно вместо этого вписать файл и читать его
         int xWins = 0;
         int oWins = 0;
         int draws = 0;
 
+        System.out.println("Играть с ботом? (y/n)");
+        boolean withBotOrNo = askYesNo(scanner);
+
         while (true) {
-            char result = playOneGame(scanner);
+            char result = withBotOrNo ? playOneGameWithBot(scanner) : playOneGame(scanner);
 
             switch (result) {
                 case 'x' -> xWins++;
@@ -31,6 +33,7 @@ public class Main {
             System.out.println();
 
             // Хочет ли пользователь продолжить? Если нет, то выходим из цикла
+            System.out.println("Сыграть еще раз? (y/n)");
             if (!askYesNo(scanner))
                 break; //askYesNo вернет false(пользователь хочет закончить), тогда '!' изменит его на true и сработает break
         }
@@ -69,15 +72,15 @@ public class Main {
     }
 
     private static boolean isDraw(int moveCount) {
-        /*
-        Было вот так (много и некрасиво):
-        if (moveCount == 9) {
-            return true;
-        }
-        else {
-            return false;
-        }
-         */
+            /*
+            Было вот так (много и некрасиво):
+            if (moveCount == 9) {
+                return true;
+            }
+            else {
+                return false;
+            }
+             */
         // Стало:
         return moveCount == 9; // Это выражение уже вернет булевое значение
     }
@@ -177,7 +180,6 @@ public class Main {
 
     private static boolean askYesNo(Scanner scanner) {
         while (true) {
-            System.out.println("Сыграть еще раз? (y/n)");
             char answer = scanner.next().trim().toLowerCase().charAt(0); //trim убрать невидимые символы,
             // toLowerCase переводит в нижний регистр,
             // а charAt(0) берет первый символ(индекс который в скобках), пример: yes -> y
@@ -194,36 +196,10 @@ public class Main {
         }
     }
 
-    private static int ChoiceOR(Scanner scanner, Random random) {
-        while (true) {
-            System.out.println("Выберите: орел(0) или решка(1). Напишите, что вы выбрали: 0/1");
-            char answer = scanner.next().trim().toLowerCase().charAt(0); //trim убрать невидимые символы,
-            // toLowerCase переводит в нижний регистр,
-            // а charAt(0) берет первый символ(индекс который в скобках), пример: yes -> y
-
-            switch (answer) {
-                case '0' -> {
-                    int coinFlip = random.nextInt(2); // 2 в скобках означает что от 0 до 2(не включительно)
-                    return (coinFlip == 0) ? 0 : 1; // здесь интересный трюк описанный после метода будет
-                } //  Без {} выдает ошибку. Разрешены только выражения, блоки(фигурные скобки {}) и выброс ошибок (throw ...)
-                case '1' -> {
-                    int coinFlip = random.nextInt(2);
-                    return (coinFlip == 1) ? 2 : 3;
-                } // Поэтому прячем return в фигурные скобки, который разрешен синтаксисом языка
-                default ->
-                        System.out.println("Неверный ввод. Введите 0, если вы за 'орел' или 1, если вы за 'решка'"); // Вызов метода (выражение) - разрешен
-            }
-        }
-    }
-    // Почему возвращает числа 0-4, сделано, чтобы собрать всю инфу, возвращая так мы понимаем, что выбрал пользователь и выиграл он или нет
-    // Удобно, что если возвратное значение кратно 2, то выиграл user
-
     // Для игры с ботом
     private static char playOneGameWithBot(Scanner scanner) { // Извне берется только сканер
-        // Орел или решка
-        System.out.println("Кто ходит первым определяется жребием");
-        System.out.println("Выберите: орел(0) или решка(1). Напишите за кого вы: 0/1");
-        int choise = ChoiceOR();
+        Random random = new Random();
+
         // Поле
         char[][] board = {
                 {'.', '.', '.'},
@@ -231,13 +207,20 @@ public class Main {
                 {'.', '.', '.'}
         };
 
-        // Текущий ход. Начало с "х"
-        char turn = 'x';
+        // Орел или решка
+        System.out.println("Кто ходит первым определяется жребием");
 
+        boolean humanFirst = random.nextBoolean(); // Сначало было Boolean,
+
+        char humanSymbol = humanFirst ? 'x' : 'o';
+        char botSymbol = humanFirst ? 'o' : 'x';
+
+        char turn = 'x';
         // Счетчик ходов
         int moveCount = 0;
 
         while (true) {
+
             System.out.println();
             printBoard(board); // Вывод поля
             System.out.println();
@@ -250,32 +233,38 @@ public class Main {
             int row = 0;
             int col = 0;
 
-            try {
-                System.out.print("Введите номер строки: (0-2)");
-                row = scanner.nextInt(); // Здесь нельзя писать "var row", читаемость упадет. Всегда, где цифры лучше не исп. "var"
-                if (row < 0 || row > 2) {
-                    throw new IllegalArgumentException();
-                }
+            if (turn == humanSymbol) {
+                try {
+                    System.out.print("Введите номер строки: (0-2)");
+                    row = scanner.nextInt(); // Здесь нельзя писать "var row", читаемость упадет. Всегда, где цифры лучше не исп. "var"
+                    if (row < 0 || row > 2) {
+                        throw new IllegalArgumentException();
+                    }
 
-                System.out.print("Введите номер столбца: (0-2)");
-                col = scanner.nextInt();
-                if (col < 0 || col > 2) {
-                    throw new IllegalArgumentException(); // Если индекса такой ячейки нет (выход за пределы массива) - вызываем ошибку
-                }
+                    System.out.print("Введите номер столбца: (0-2)");
+                    col = scanner.nextInt();
+                    if (col < 0 || col > 2) {
+                        throw new IllegalArgumentException(); // Если индекса такой ячейки нет (выход за пределы массива) - вызываем ошибку
+                    }
 
-            } catch (InputMismatchException |
-                     IllegalArgumentException e) { // InputMismatchException - ошибка, получил тип данных не который ожидал
-                // Т.к. ранее мы выбросили ошибку с аргументом, то мы должны ее ловить в catch, а также нужно поймать ошибку с типами данных
-                // Для этого используется multi-catch - это |.
-                // e - нужен, чтобы хранить внутри себя данные об ошибке, потом можно будет вывести ее и посмотреть + это обязательный синтаксис Java
-                // Важно! Из-за multi-catch 2 разные ошибки сохраняются в 1 e
-                System.out.println("Ошибка ввода! Введите число от 0 до 2 (включительно)");
-                // Важно! Если user введет например "Пока", а контейнер ожидает Int, он заберет "Пока" и сохранит его и когда после
-                // обработки ошибки он вернется к этому этапу он уже будет содержать "Пока" и опять будет ошибка. Поэтому Важно его очистить.
-                scanner.nextLine(); // Очистка контейнера
-                continue;
+                } catch (InputMismatchException |
+                         IllegalArgumentException e) { // InputMismatchException - ошибка, получил тип данных не который ожидал
+                    // Т.к. ранее мы выбросили ошибку с аргументом, то мы должны ее ловить в catch, а также нужно поймать ошибку с типами данных
+                    // Для этого используется multi-catch - это |.
+                    // e - нужен, чтобы хранить внутри себя данные об ошибке, потом можно будет вывести ее и посмотреть + это обязательный синтаксис Java
+                    // Важно! Из-за multi-catch 2 разные ошибки сохраняются в 1 e
+                    System.out.println("Ошибка ввода! Введите число от 0 до 2 (включительно)");
+                    // Важно! Если user введет например "Пока", а контейнер ожидает Int, он заберет "Пока" и сохранит его и когда после
+                    // обработки ошибки он вернется к этому этапу он уже будет содержать "Пока" и опять будет ошибка. Поэтому Важно его очистить.
+                    scanner.nextLine(); // Очистка контейнера
+                    continue;
+                }
+            } else {
+                int move[] = moveBot(random, board); // Надо внутрь переменную, не надо их объявлять
+                row = move[0];
+                col = move[1];
+                System.out.println("Бот ходит в [" + row + "][" + col + "]");
             }
-
             // Проверка на занятость ячейки
 
             if (board[row][col] == '.') {
@@ -304,5 +293,18 @@ public class Main {
                 System.out.println("Поле уже занято, выберите другое");
             }
         }
+    }
+
+    private static int[] moveBot(Random random, char[][] board) {
+        List<Integer> empty = new ArrayList<>(); // Инициализация динамического списка с именем empty
+        for (int i = 0; i < 9; i++) { // Чтобы не делать вложенный for, есть зависимость, если например: 5/3 = 1(строка), 5%3(столб) = 2, то есть board[1][2] - это верно
+            if (board[i / 3][i % 3] == '.') { // Если поле пустое(.) добавляем в список
+                empty.add(i); // Метод названиеСписка.add(переменная или значение или еще что) добавляет "это" в список
+            }
+        }
+        int pick = empty.get(random.nextInt(empty.size())); // Например: empty[6,4,8] и empty.size() вернет 3, но из-за random.nextInt()
+        // он выберет не из 0 1 2 3, а до 3(не включительно) -> 0 1 2 - а это индексы empty
+
+        return new int[]{pick / 3, pick % 3}; // чтобы не делать отдельно переменную и присваивать ей, мы просто напишем new int[] и вернем
     }
 }
