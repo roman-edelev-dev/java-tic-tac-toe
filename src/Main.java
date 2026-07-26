@@ -7,33 +7,39 @@ import java.util.ArrayList; // Аналогично выше
 public class Main {
     public static void main(String[] args) {
         // Вывод приветствия и поля
-        System.out.println("Игра: КреСТИкИ-НоЛИки");
-        System.out.println();
+        System.out.println("++++++++======КреСТИкИ-НоЛИки======++++++++");
 
         // Здесь мы видим "new Scanner.." -> ожидаем тип Scanner. Поэтому можем не писать "Scanner (имя)", а пишем "var (имя)", оно короче и понятней
         var scanner = new Scanner(System.in); // System.in означает, что мы ожидаем ввод с клавиатуры. Также можно вместо этого вписать файл и читать его
         int xWins = 0;
         int oWins = 0;
         int draws = 0;
+        int uWins = 0;
+        int bWins = 0;
 
-        System.out.println("Играть с ботом? (y/n)");
+        System.out.print("Играть с ботом (" + GREEN + "y" + RESET + "/" + RED + "n" + RESET + ")? ");
         boolean withBotOrNo = askYesNo(scanner);
 
         while (true) {
             char result = withBotOrNo ? playOneGameWithBot(scanner) : playOneGame(scanner);
 
             switch (result) {
-                case 'x' -> xWins++;
-                case 'o' -> oWins++;
-                case 'd' -> draws++;
+                case 'x' -> xWins++; // o
+                case 'o' -> oWins++; // x
+                case 'd' -> draws++; // Ничья
+                case 'u' -> uWins++; // Выиграл user
+                case 'b' -> bWins++; // Выиграл bot
             }
 
             System.out.println();
-            System.out.println("Счет -> x: " + xWins + " | o: " + oWins + " | ничья: " + draws);
+            System.out.println("-------------------------------------------");
+            System.out.println("Счет для одного -> " + GREEN + "x" + RESET + ": " + xWins + " | " + RED + "o" + RESET + ": " + oWins + " | ничья: " + draws);
+            System.out.println("Счет с ботом -> " + GREEN + "user" + RESET + ": " + uWins + " | " + RED + "bot" + RESET + ": " + bWins + " | ничья: " + draws);
+            System.out.println("-------------------------------------------");
             System.out.println();
 
             // Хочет ли пользователь продолжить? Если нет, то выходим из цикла
-            System.out.println("Сыграть еще раз? (y/n)");
+            System.out.print("Сыграть еще раз (" + GREEN + "y" + RESET + "/" + RED + "n" + RESET + ")? ");
             if (!askYesNo(scanner))
                 break; //askYesNo вернет false(пользователь хочет закончить), тогда '!' изменит его на true и сработает break
         }
@@ -122,32 +128,10 @@ public class Main {
             int row = 0;
             int col = 0;
 
-            try {
-                System.out.print("Введите номер строки: (0-2)");
-                row = scanner.nextInt(); // Здесь нельзя писать "var row", читаемость упадет. Всегда, где цифры лучше не исп. "var"
-                if (row < 0 || row > 2) {
-                    throw new IllegalArgumentException();
-                }
-
-                System.out.print("Введите номер столбца: (0-2)");
-                col = scanner.nextInt();
-                if (col < 0 || col > 2) {
-                    throw new IllegalArgumentException(); // Если индекса такой ячейки нет (выход за пределы массива) - вызываем ошибку
-                }
-
-            } catch (InputMismatchException |
-                     IllegalArgumentException e) { // InputMismatchException - ошибка, получил тип данных не который ожидал
-                // Т.к. ранее мы выбросили ошибку с аргументом, то мы должны ее ловить в catch, а также нужно поймать ошибку с типами данных
-                // Для этого используется multi-catch - это |.
-                // e - нужен, чтобы хранить внутри себя данные об ошибке, потом можно будет вывести ее и посмотреть + это обязательный синтаксис Java
-                // Важно! Из-за multi-catch 2 разные ошибки сохраняются в 1 e
-                System.out.println("Ошибка ввода! Введите число от 0 до 2 (включительно)");
-                // Важно! Если user введет например "Пока", а контейнер ожидает Int, он заберет "Пока" и сохранит его и когда после
-                // обработки ошибки он вернется к этому этапу он уже будет содержать "Пока" и опять будет ошибка. Поэтому Важно его очистить.
-                scanner.nextLine(); // Очистка контейнера
-                continue;
-            }
-
+            // Ввод и обработка ошибок
+            int move[] = readMove(scanner, board); // Надо внутрь переменную, не надо их объявлять
+            row = move[0];
+            col = move[1];
             // Проверка на занятость ячейки
 
             if (board[row][col] == '.') {
@@ -157,7 +141,7 @@ public class Main {
                 if (isWin(turn, board)) {
                     printBoard(board); // Печать поля для красоты
                     System.out.println();
-                    System.out.println("Победил игрок: " + turn + ". Поздравляем!");
+                    System.out.println(GREEN + "Победил игрок: " + turn + ". Поздравляем!" + RESET);
                     return turn;
                 }
 
@@ -173,7 +157,7 @@ public class Main {
                 turn = nextTurn(turn);
 
             } else {
-                System.out.println("Поле уже занято, выберите другое");
+                System.out.println(RED + "!!! Поле занято !!!" + RESET);
             }
         }
     }
@@ -191,7 +175,7 @@ public class Main {
                     return false;
                 } // Поэтому прячем return в фигурные скобки, который разрешен синтаксисом языка
                 default ->
-                        System.out.println("Неверный ввод. Введите y, чтобы продолжить или n, чтобы завершить"); // Вызов метода (выражение) - разрешен
+                        System.out.println(RED + "Неверный ввод. Введите y, чтобы продолжить или n, чтобы завершить" + RESET); // Вызов метода (выражение) - разрешен
             }
         }
     }
@@ -208,9 +192,9 @@ public class Main {
         };
 
         // Орел или решка
-        System.out.println("Кто ходит первым определяется жребием");
+        System.out.println("===Кто ходит первым определяется жребием===");
 
-        boolean humanFirst = random.nextBoolean(); // Сначало было Boolean,
+        boolean humanFirst = random.nextBoolean(); // Сначала было Boolean,
 
         char humanSymbol = humanFirst ? 'x' : 'o';
         char botSymbol = humanFirst ? 'o' : 'x';
@@ -225,48 +209,19 @@ public class Main {
             printBoard(board); // Вывод поля
             System.out.println();
 
-            System.out.println("Сейчас ходит: " + turn);
-
             // Запрос у пользователя ячейки поля
             // Блок try/catch сохраняет переменные инициализированные внутри него оставляем внутри себя
             // Поэтому объявляем заранее
             int row = 0;
             int col = 0;
 
-            if (turn == humanSymbol) {
-                try {
-                    System.out.print("Введите номер строки: (0-2)");
-                    row = scanner.nextInt(); // Здесь нельзя писать "var row", читаемость упадет. Всегда, где цифры лучше не исп. "var"
-                    if (row < 0 || row > 2) {
-                        throw new IllegalArgumentException();
-                    }
+            // Сохраняем в переменную, иначе если просто вызовем то оно сохранится в локальной переменной и не будет меняться
+            int[] move = (turn == humanSymbol) ? readMove(scanner, board) : moveBot(random, board);// Надо внутрь переменную, не надо их объявлять
+            row = move[0];
+            col = move[1];
+            if (turn != humanSymbol) System.out.println("Бот ходит в поле " + (row * 3 + col + 1));
 
-                    System.out.print("Введите номер столбца: (0-2)");
-                    col = scanner.nextInt();
-                    if (col < 0 || col > 2) {
-                        throw new IllegalArgumentException(); // Если индекса такой ячейки нет (выход за пределы массива) - вызываем ошибку
-                    }
-
-                } catch (InputMismatchException |
-                         IllegalArgumentException e) { // InputMismatchException - ошибка, получил тип данных не который ожидал
-                    // Т.к. ранее мы выбросили ошибку с аргументом, то мы должны ее ловить в catch, а также нужно поймать ошибку с типами данных
-                    // Для этого используется multi-catch - это |.
-                    // e - нужен, чтобы хранить внутри себя данные об ошибке, потом можно будет вывести ее и посмотреть + это обязательный синтаксис Java
-                    // Важно! Из-за multi-catch 2 разные ошибки сохраняются в 1 e
-                    System.out.println("Ошибка ввода! Введите число от 0 до 2 (включительно)");
-                    // Важно! Если user введет например "Пока", а контейнер ожидает Int, он заберет "Пока" и сохранит его и когда после
-                    // обработки ошибки он вернется к этому этапу он уже будет содержать "Пока" и опять будет ошибка. Поэтому Важно его очистить.
-                    scanner.nextLine(); // Очистка контейнера
-                    continue;
-                }
-            } else {
-                int move[] = moveBot(random, board); // Надо внутрь переменную, не надо их объявлять
-                row = move[0];
-                col = move[1];
-                System.out.println("Бот ходит в [" + row + "][" + col + "]");
-            }
             // Проверка на занятость ячейки
-
             if (board[row][col] == '.') {
                 moveCount++; // Увеличиваем ход на 1
                 board[row][col] = turn; // Заполняем ячейку
@@ -274,7 +229,13 @@ public class Main {
                 if (isWin(turn, board)) {
                     printBoard(board); // Печать поля для красоты
                     System.out.println();
-                    System.out.println("Победил игрок: " + turn + ". Поздравляем!");
+                    if (turn == humanSymbol) {
+                        turn = 'u'; // Что выиграл user
+                        System.out.println(GREEN + "Вы выиграли! Поздравляем!" + RESET);
+                    } else {
+                        turn = 'b';
+                        System.out.println(RED + "Вы проиграли :(" + RESET);
+                    }
                     return turn;
                 }
 
@@ -282,7 +243,7 @@ public class Main {
                 if (isDraw(moveCount)) {
                     printBoard(board); // Печать поля для красоты
                     System.out.println();
-                    System.out.println("Ничья!");
+                    System.out.println("Ничья.");
                     return 'd';
                 }
 
@@ -290,7 +251,7 @@ public class Main {
                 turn = nextTurn(turn);
 
             } else {
-                System.out.println("Поле уже занято, выберите другое");
+                System.out.println(RED + "!!! Поле занято !!!" + RESET);
             }
         }
     }
@@ -307,4 +268,33 @@ public class Main {
 
         return new int[]{pick / 3, pick % 3}; // чтобы не делать отдельно переменную и присваивать ей, мы просто напишем new int[] и вернем
     }
+
+    private static int[] readMove(Scanner scanner, char[][] board) {
+        while (true) {
+            try {
+                System.out.print("Введите номер поля от 1 до 9: ");
+                System.out.println();
+                int n = scanner.nextInt();
+                if (n < 1 || n > 9) throw new IllegalArgumentException();
+                int row = (n - 1) / 3;
+                int col = (n - 1) % 3;
+                if (board[row][col] != '.') {
+                    System.out.println(RED + "!!! Поле занято !!!" + RESET);
+                    continue;
+                }
+                return new int[]{row, col};
+            } catch (InputMismatchException | IllegalArgumentException e) {
+                System.out.println(RED + "Ошибка ввода!" + RESET);
+                scanner.nextLine();
+            }
+        }
+    }
+
+    // Для изменения цвета шрифта
+    // На примере красного: \u001b[31m | (27)char + "[31m" | "\033[31m"
+    // Еще есть: \n перенос на новую строку, \t добавит таб
+    private static final String RESET = "\u001b[0m";
+    private static final String RED = "\u001b[31m";
+    private static final String GREEN = "\u001b[32m";
+    private static final String GRAY = "\u001b[90m";
 }
