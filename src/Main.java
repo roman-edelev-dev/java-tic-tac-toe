@@ -13,9 +13,10 @@ public class Main {
         var scanner = new Scanner(System.in); // System.in означает, что мы ожидаем ввод с клавиатуры. Также можно вместо этого вписать файл и читать его
         int xWins = 0;
         int oWins = 0;
-        int draws = 0;
+        int drawsSolo = 0;
         int uWins = 0;
         int bWins = 0;
+        int drawsBot = 0;
 
         System.out.print("Играть с ботом (" + GREEN + "y" + RESET + "/" + RED + "n" + RESET + ")? ");
         boolean withBotOrNo = askYesNo(scanner);
@@ -26,14 +27,17 @@ public class Main {
             switch (result) {
                 case 'x' -> xWins++; // o
                 case 'o' -> oWins++; // x
-                case 'd' -> draws++; // Ничья
+                case 'd' -> {
+                    if (withBotOrNo) drawsBot++;
+                    else drawsSolo++;
+                } // Ничья
                 case 'u' -> uWins++; // Выиграл user
                 case 'b' -> bWins++; // Выиграл bot
             }
 
             System.out.println();
-            System.out.println(GRAY + "Счет для одного -> x: " + xWins + " | o: " + oWins + " | ничья: " + draws + RESET);
-            System.out.println(GRAY + "Счет с ботом -> user: " + uWins + " | bot: " + bWins + " | ничья: " + draws + RESET);
+            System.out.println(GRAY + "Счет для двоих -> x: " + xWins + " | o: " + oWins + " | ничья: " + drawsSolo + RESET);
+            System.out.println(GRAY + "Счет с ботом -> user: " + uWins + " | bot: " + bWins + " | ничья: " + drawsBot + RESET);
             System.out.println();
 
             // Хочет ли пользователь продолжить? Если нет, то выходим из цикла
@@ -56,7 +60,7 @@ public class Main {
                 else if (board[i][j] == 'x') cell = GREEN + "x" + RESET;
                 else cell = RED + "o" + RESET;
 
-                System.out.print(cell + (j != 2 ? " " : "")); // Сократили код в 1 строку из 5 с помощью тернарного оператора
+                System.out.print(cell + (j != 2 ? "  " : "")); // Сократили код в 1 строку из 5 с помощью тернарного оператора
             }
             System.out.println();
         }
@@ -159,9 +163,6 @@ public class Main {
 
                 // Смена хода
                 turn = nextTurn(turn);
-
-            } else {
-                System.out.println(RED + "!!! Поле занято !!!" + RESET);
             }
         }
     }
@@ -201,14 +202,12 @@ public class Main {
         boolean humanFirst = random.nextBoolean(); // Сначала было Boolean,
 
         char humanSymbol = humanFirst ? 'x' : 'o';
-        char botSymbol = humanFirst ? 'o' : 'x';
 
         char turn = 'x';
         // Счетчик ходов
         int moveCount = 0;
 
         while (true) {
-
             System.out.println();
             printBoard(board); // Вывод поля
             System.out.println();
@@ -257,9 +256,6 @@ public class Main {
 
                 // Смена хода
                 turn = nextTurn(turn);
-
-            } else {
-                System.out.println(RED + "!!! Поле занято !!!" + RESET);
             }
         }
     }
